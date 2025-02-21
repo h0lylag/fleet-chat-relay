@@ -2,14 +2,15 @@ import os
 import re
 import time
 from threading import Thread, Event
-from tkinter import messagebox
+from tkinter import messagebox, StringVar
+from typing import Optional
 from config import Config
 from helpers import send_to_discord, extract_eve_timestamp, unix_timestamp
 
-monitor_thread = None
+monitor_thread: Optional[Thread] = None
 stop_event = Event()
 
-def get_latest_log(character_name):
+def get_latest_log(character_name: str) -> Optional[str]:
     """
     Retrieve the most recent Fleet log file for the specified character.
     Returns the full path to the log file if found, or None otherwise.
@@ -18,7 +19,7 @@ def get_latest_log(character_name):
     print(f"Searching logs in: {log_dir}")
     
     try:
-        fleet_logs = [os.path.join(log_dir, file) 
+        fleet_logs = [os.path.join(log_dir, file)
                       for file in os.listdir(log_dir) if file.startswith("Fleet_")]
     except FileNotFoundError:
         print(f"Log directory not found: {log_dir}")
@@ -35,7 +36,8 @@ def get_latest_log(character_name):
     for log_file in fleet_logs:
         try:
             with open(log_file, 'r', encoding='utf-16', errors='ignore') as f:
-                if pattern.search(f.read()):
+                content = f.read()
+                if pattern.search(content):
                     print(f"Found log for '{character_name}': {log_file}")
                     return log_file
         except Exception as e:
@@ -44,14 +46,13 @@ def get_latest_log(character_name):
     print(f"No log found for character: {character_name}")
     return None
 
-def monitor_log_updates(log_file, character_name):
+def monitor_log_updates(log_file: str, character_name: str) -> None:
     """
     Continuously monitor the given log file for new fleet chat messages.
     For every new line, optionally prepend a relative Discord timestamp (if enabled in the config)
     and relay the message to the Discord webhook.
     """
     print(f"Monitoring log file: {log_file}")
-    # Retrieve the webhook URL from the current user config
     webhook_url = Config.user_config.get("DISCORD_WEBHOOK_URL", Config.DEFAULT_DISCORD_WEBHOOK_URL)
     try:
         with open(log_file, 'r', encoding='utf-16', errors='ignore') as f:
@@ -73,7 +74,7 @@ def monitor_log_updates(log_file, character_name):
     except Exception as e:
         print(f"Error monitoring log file: {e}")
 
-def start_monitoring(character_name, log_file_var):
+def start_monitoring(character_name: str, log_file_var: StringVar) -> None:
     """
     Start (or restart) the log-monitoring thread for the specified character.
     Before tailing new messages, send an initial message indicating that relaying has begun.
@@ -91,11 +92,10 @@ def start_monitoring(character_name, log_file_var):
         return
     log_file_var.set(os.path.basename(log_file))
 
-    # Retrieve the webhook URL from the config.
     webhook_url = Config.user_config.get("DISCORD_WEBHOOK_URL", Config.DEFAULT_DISCORD_WEBHOOK_URL)
 
     # Read the header of the log file to extract the Listener's name.
-    listener = None
+    listener: Optional[str] = None
     try:
         with open(log_file, 'r', encoding='utf-16', errors='ignore') as f:
             for line in f:
@@ -111,13 +111,13 @@ def start_monitoring(character_name, log_file_var):
         send_to_discord(f"Relaying fleet chat for `{listener}`", webhook_url)
     
     monitor_thread = Thread(
-        target=monitor_log_updates, 
+        target=monitor_log_updates,
         args=(log_file, character_name)
     )
     monitor_thread.daemon = True
     monitor_thread.start()
 
-def load_character_monitor(character_var, log_file_var):
+def load_character_monitor(character_var: StringVar, log_file_var: StringVar) -> None:
     """
     Initiate monitoring for the selected character.
     If no valid EVE client is selected, do nothing.

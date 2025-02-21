@@ -1,13 +1,17 @@
 import json
 import os
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__)) + "/"
-CONFIG_FILE = BASE_DIR + "fleet-chat-relay.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_FILE = os.path.join(BASE_DIR, "fleet-chat-relay.json")
 
 class Config:
     APP_TITLE = "Fleet Chat Relay"
     VERSION = "0.0.1"
-    ABOUT_TEXT = f"{APP_TITLE} v{VERSION}\n\nA simple tool for EVE Online to relay fleet chat messages to Discord.\n\nMade by h0ly lag"
+    ABOUT_TEXT = (
+        f"{APP_TITLE} v{VERSION}\n\n"
+        "A simple tool for EVE Online to relay fleet chat messages to Discord.\n\n"
+        "Made by h0ly lag"
+    )
     DISCORD_WEBHOOK_NAME = "Fleet Chat Relay"
     DISCORD_WEBHOOK_AVATAR = "https://i.imgur.com/a5sNnRi.gif"
     
@@ -22,14 +26,14 @@ class Config:
     }
     
     @classmethod
-    def load_config(cls):
+    def load_config(cls) -> dict:
         """
         Load configuration from fleet-chat-relay.json (if it exists) and update user_config.
         Returns the updated configuration dictionary.
         """
         if os.path.exists(CONFIG_FILE):
             try:
-                with open(CONFIG_FILE, "r") as f:
+                with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     cls.user_config.update(data)
             except Exception as e:
@@ -37,16 +41,15 @@ class Config:
         return cls.user_config
 
     @classmethod
-    def save_config(cls):
+    def save_config(cls) -> None:
         """
         Save the current user_config dictionary to fleet-chat-relay.json.
         """
         try:
-            with open(CONFIG_FILE, "w") as f:
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                 json.dump(cls.user_config, f, indent=4)
         except Exception as e:
             print("Error saving config:", e)
-
 
 # Load the configuration when the module is imported.
 Config.load_config()

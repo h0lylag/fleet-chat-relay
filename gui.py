@@ -4,13 +4,18 @@ from monitor import load_character_monitor, stop_event, monitor_thread
 from eve import get_eve_windows, refresh_eve_clients
 from config import Config
 
-def toggle_always_on_top(root, top_var):
+def toggle_always_on_top(root: tk.Tk, top_var: tk.BooleanVar) -> None:
     root.attributes('-topmost', top_var.get())
 
-def show_about():
+def show_about() -> None:
     messagebox.showinfo(f"About {Config.APP_TITLE}", Config.ABOUT_TEXT)
 
-def build_gui():
+def build_gui() -> None:
+    """
+    Build and display the main GUI for Fleet Chat Relay.
+    This GUI allows the user to select an EVE client, load its log,
+    and configure the Discord webhook URL and whether to prepend timestamps.
+    """
     root = tk.Tk()
     root.title(f"{Config.APP_TITLE} - {Config.VERSION}")
     root.geometry("300x180")
@@ -33,7 +38,7 @@ def build_gui():
         variable=always_on_top,
         command=lambda: toggle_always_on_top(root, always_on_top)
     )
-    menu_bar.add_command(label="About", command=lambda: show_about())
+    menu_bar.add_command(label="About", command=show_about)
     
     # Get initial EVE client list.
     clients = get_eve_windows()
@@ -80,19 +85,19 @@ def build_gui():
     webhook_var = tk.StringVar(value=webhook_default)
     ttk.Entry(webhook_frame, textvariable=webhook_var, width=30).grid(row=0, column=1, padx=0, pady=0)
     
-    # Option checkboxes.
+    # Option checkbox for Discord Timestamps.
+    # This checkbox controls whether monitor.py prepends <t:{current_ts}:T> to messages.
     discord_ts_var = tk.BooleanVar(value=discord_ts_default)
-
     ttk.Checkbutton(root, text="Discord Timestamps", variable=discord_ts_var).pack(anchor="w", padx=10, pady=2)
-
-    def save_config():
+    
+    def save_config() -> None:
         Config.user_config["DISCORD_WEBHOOK_URL"] = webhook_var.get()
         Config.user_config["DISCORD_TIMESTAMPS"] = discord_ts_var.get()
         Config.save_config()
     
     ttk.Button(root, text="Save Config", command=save_config).pack(pady=10)
     
-    def on_close():
+    def on_close() -> None:
         stop_event.set()
         if monitor_thread and monitor_thread.is_alive():
             monitor_thread.join()
