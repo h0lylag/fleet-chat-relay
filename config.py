@@ -1,6 +1,52 @@
-class Config:
-    APP_TITLE = "FleetChatRelay"
-    VERSION = "0.0.1"
+import json
+import os
 
-    DISCORD_WEBHOOK_NAME = "FleetChatRelay"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__)) + "/"
+CONFIG_FILE = BASE_DIR + "fleet-chat-relay.json"
+
+class Config:
+    APP_TITLE = "Fleet Chat Relay"
+    VERSION = "0.0.1"
+    ABOUT_TEXT = f"{APP_TITLE} v{VERSION}\n\nA simple tool for EVE Online to relay fleet chat messages to Discord.\n\nMade by h0ly lag"
+    DISCORD_WEBHOOK_NAME = "Fleet Chat Relay"
     DISCORD_WEBHOOK_AVATAR = "https://i.imgur.com/a5sNnRi.gif"
+    
+    # Default configuration values
+    DEFAULT_DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/000000000000000000/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    DEFAULT_DISCORD_TIMESTAMPS = True
+
+    # This dict will hold the current user configuration.
+    user_config = {
+        "DISCORD_WEBHOOK_URL": DEFAULT_DISCORD_WEBHOOK_URL,
+        "DISCORD_TIMESTAMPS": DEFAULT_DISCORD_TIMESTAMPS,
+    }
+    
+    @classmethod
+    def load_config(cls):
+        """
+        Load configuration from fleet-chat-relay.json (if it exists) and update user_config.
+        Returns the updated configuration dictionary.
+        """
+        if os.path.exists(CONFIG_FILE):
+            try:
+                with open(CONFIG_FILE, "r") as f:
+                    data = json.load(f)
+                    cls.user_config.update(data)
+            except Exception as e:
+                print("Error loading config:", e)
+        return cls.user_config
+
+    @classmethod
+    def save_config(cls):
+        """
+        Save the current user_config dictionary to fleet-chat-relay.json.
+        """
+        try:
+            with open(CONFIG_FILE, "w") as f:
+                json.dump(cls.user_config, f, indent=4)
+        except Exception as e:
+            print("Error saving config:", e)
+
+
+# Load the configuration when the module is imported.
+Config.load_config()
